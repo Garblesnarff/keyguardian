@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Welcome to API Key Wallet</h1>
+<p>Please <a href="{{ url_for('auth.login') }}">login</a> or <a href="{{ url_for('auth.register') }}">register</a> to access your wallet.</p>
+{% endblock %}
