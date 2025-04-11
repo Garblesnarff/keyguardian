@@ -2,82 +2,89 @@
 
 {% block content %}
 <div class="landing-container">
-    <section class="hero">
-        <div class="hero-content">
-            <h1 class="main-headline">Secure Your API Keys with KeyGuardian</h1>
-            <p class="tagline">Effortless management and encryption for your valuable keys</p>
-            <div class="cta-buttons">
-                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Secure My Keys Now</a>
-                <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">Login</a>
-            </div>
-        </div>
-        <div class="hero-image">
-            <div class="key-icon-background"></div>
-        </div>
-    </section>
 
-    <section class="features">
-        <h2>Key Features</h2>
-        <div class="feature-list">
-            <div class="feature-item">
-                <i class="fas fa-lock"></i>
-                <h3>Secure Storage</h3>
-                <p>Your API keys are encrypted and stored safely.</p>
-            </div>
-            <div class="feature-item">
-                <i class="fas fa-tasks"></i>
-                <h3>Easy Management</h3>
-                <p>Organize and access your keys with ease.</p>
-            </div>
-            <div class="feature-item">
-                <i class="fas fa-folder"></i>
-                <h3>Categorization</h3>
-                <p>Group your keys by project or purpose.</p>
-            </div>
-        </div>
-    </section>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1 class="main-headline">The Secure API Key Vault for Developers</h1>
+      <p class="tagline">Encrypt, organize, and access your API keys effortlessly</p>
+      <div class="cta-buttons">
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Get Started Free</a>
+        <a href="#features" class="btn btn-secondary btn-lg">Learn More</a>
+      </div>
+    </div>
+    <div class="hero-image">
+      <div class="key-icon-background"></div>
+    </div>
+  </section>
 
-    <section class="benefits">
-        <h2>Why Choose KeyGuardian?</h2>
-        <ul class="benefits-list">
-            <li>Never worry about lost API keys again</li>
-            <li>Save time with efficient key management</li>
-            <li>Enhance security with encrypted storage</li>
-            <li>Streamline your development workflow</li>
-        </ul>
-    </section>
+  <!-- Trusted By -->
+  <section class="trusted-by">
+    <h2>Trusted by Developers Worldwide</h2>
+    <div class="trusted-logos">
+      <img src="https://dummyimage.com/100x40/0299C9/ffffff&text=GitHub" alt="GitHub">
+      <img src="https://dummyimage.com/100x40/0299C9/ffffff&text=Vercel" alt="Vercel">
+      <img src="https://dummyimage.com/100x40/0299C9/ffffff&text=Netlify" alt="Netlify">
+      <img src="https://dummyimage.com/100x40/0299C9/ffffff&text=AWS" alt="AWS">
+    </div>
+  </section>
 
-    <section class="faq">
-        <h2>Frequently Asked Questions</h2>
-        <div class="faq-list">
-            <div class="faq-item">
-                <h3 class="faq-question">How secure is KeyGuardian?</h3>
-                <div class="faq-answer">
-                    <p>KeyGuardian uses industry-standard encryption to protect your API keys.</p>
-                </div>
-            </div>
-            <div class="faq-item">
-                <h3 class="faq-question">Can I categorize keys by project?</h3>
-                <div class="faq-answer">
-                    <p>Yes, KeyGuardian allows you to organize your keys into custom categories.</p>
-                </div>
-            </div>
-            <div class="faq-item">
-                <h3 class="faq-question">Is my data encrypted?</h3>
-                <div class="faq-answer">
-                    <p>Absolutely. All your API keys are encrypted before being stored in our database.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+  <!-- Features -->
+  <section id="features" class="features">
+    <h2>Why Developers Love KeyGuardian</h2>
+    <div class="feature-list">
+      <div class="feature-item">
+        <i class="fas fa-lock"></i>
+        <h3>End-to-End Encryption</h3>
+        <p>Your API keys are encrypted before they leave your device.</p>
+        <pre><code># Store a new key
+keyguardian add --name "Stripe" --key sk_test_123</code></pre>
+      </div>
+      <div class="feature-item">
+        <i class="fas fa-code"></i>
+        <h3>CLI & API Access</h3>
+        <p>Manage keys via command line or integrate with your CI/CD pipeline.</p>
+        <pre><code># Fetch a key in CI
+keyguardian get --name "Stripe"</code></pre>
+      </div>
+      <div class="feature-item">
+        <i class="fas fa-folder"></i>
+        <h3>Organize by Project</h3>
+        <p>Group keys by project, environment, or team.</p>
+        <pre><code># List all keys in a project
+keyguardian list --project "MyApp"</code></pre>
+      </div>
+    </div>
+  </section>
 
-    <section class="final-cta">
-        <h2>Ready to Secure Your API Keys?</h2>
-        <p>Start managing your keys with KeyGuardian today!</p>
-        <div class="cta-buttons">
-            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Secure My Keys Now</a>
-            <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">Login</a>
-        </div>
-    </section>
+  <!-- Testimonials -->
+  <section class="testimonials">
+    <h2>What Developers Are Saying</h2>
+    <div class="testimonial-list">
+      <div class="testimonial-item">
+        <p>"KeyGuardian makes managing secrets painless. Love the CLI integration!"</p>
+        <span>- Alex, Backend Engineer</span>
+      </div>
+      <div class="testimonial-item">
+        <p>"Finally, a tool that keeps my API keys safe and accessible."</p>
+        <span>- Jamie, Full Stack Developer</span>
+      </div>
+      <div class="testimonial-item">
+        <p>"The encryption and project grouping features are game changers."</p>
+        <span>- Sam, DevOps Specialist</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final Call to Action -->
+  <section class="final-cta">
+    <h2>Start Securing Your API Keys Today</h2>
+    <p>Join thousands of developers who trust KeyGuardian</p>
+    <div class="cta-buttons">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Get Started Free</a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">Login</a>
+    </div>
+  </section>
+
 </div>
 {% endblock %}

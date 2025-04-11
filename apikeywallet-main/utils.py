@@ -1,19 +1,70 @@
+"""
+utils.py - Encryption utilities
+
+Provides functions to encrypt and decrypt API keys using Fernet symmetric encryption.
+
+Dependencies:
+- cryptography
+- os
+- logging
+
+@author KeyGuardian Team
+"""
+
+# ================================
+# Standard library imports
+# ================================
 import os
-from cryptography.fernet import Fernet, InvalidToken
 import logging
 
+# ================================
+# Third-party imports
+# ================================
+from cryptography.fernet import Fernet, InvalidToken
+
+# ================================
+# Logging configuration
+# ================================
 logging.basicConfig(level=logging.DEBUG)
 
-ENCRYPTION_KEY = os.environ['ENCRYPTION_KEY']
+# ================================
+# Encryption setup
+# ================================
+ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
 if not ENCRYPTION_KEY:
     raise ValueError("ENCRYPTION_KEY environment variable is not set")
 
 fernet = Fernet(ENCRYPTION_KEY)
 
+# ================================
+# Functions
+# ================================
 def encrypt_key(api_key):
+    """
+    Encrypt an API key string.
+
+    Args:
+        api_key (str): Plaintext API key
+
+    Returns:
+        str: Encrypted API key (base64 encoded)
+    """
     return fernet.encrypt(api_key.encode()).decode()
 
 def decrypt_key(encrypted_key):
+    """
+    Decrypt an encrypted API key string.
+
+    Args:
+        encrypted_key (str or bytes or memoryview): Encrypted API key
+
+    Returns:
+        str: Decrypted plaintext API key
+
+    Raises:
+        InvalidToken: If the token is invalid or corrupted
+        Exception: For other decryption errors
+    """
     try:
         if isinstance(encrypted_key, str):
             encrypted_key = encrypted_key.encode()
