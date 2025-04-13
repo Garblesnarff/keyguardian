@@ -145,7 +145,7 @@ app.register_blueprint(wallet_blueprint)
 from auth_routes import auth as auth_blueprint
 app.register_blueprint(auth_blueprint)
 
-from category_routes import main as category_blueprint
+from category_routes import categories as category_blueprint
 app.register_blueprint(category_blueprint)
 
 # ================================

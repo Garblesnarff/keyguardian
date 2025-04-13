@@ -36,12 +36,12 @@ from app import db
 # ================================
 # Blueprint setup
 # ================================
-main = Blueprint('main', __name__)
+categories = Blueprint('categories', __name__)
 
 # ================================
 # Routes
 # ================================
-@main.route('/add_category', methods=['GET', 'POST'])
+@categories.route('/add_category', methods=['GET', 'POST'])
 @login_required
 def add_category():
     """
@@ -67,7 +67,7 @@ def add_category():
             flash('An error occurred while adding the category. Please try again later.', 'danger')
     return render_template('add_category.html', form=form)
 
-@main.route('/update_key_category/<int:key_id>', methods=['POST'])
+@categories.route('/update_key_category/<int:key_id>', methods=['POST'])
 @login_required
 def update_key_category(key_id):
     """
@@ -100,7 +100,7 @@ def update_key_category(key_id):
         current_app.logger.error(f'Database error in update_key_category route: {str(e)}')
         return jsonify({'success': False, 'error': 'An error occurred while updating the category.'}), 500
 
-@main.route('/manage_categories')
+@categories.route('/manage_categories')
 @login_required
 def manage_categories():
     """
@@ -112,7 +112,7 @@ def manage_categories():
     categories = Category.query.filter_by(user_id=current_user.id).all()
     return render_template('manage_categories.html', categories=categories)
 
-@main.route('/edit_category/<int:category_id>', methods=['GET', 'POST'])
+@categories.route('/edit_category/<int:category_id>', methods=['GET', 'POST'])
 @login_required
 def edit_category(category_id):
     """
@@ -138,7 +138,7 @@ def edit_category(category_id):
             flash('An error occurred while updating the category. Please try again later.', 'danger')
     return render_template('edit_category.html', form=form, category=category)
 
-@main.route('/delete_category/<int:category_id>', methods=['POST'])
+@categories.route('/delete_category/<int:category_id>', methods=['POST'])
 @login_required
 def delete_category(category_id):
     """
