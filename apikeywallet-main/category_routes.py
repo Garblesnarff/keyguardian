@@ -131,7 +131,7 @@ def edit_category(category_id):
             category.name = form.name.data
             db.session.commit()
             flash('Category updated successfully.', 'success')
-            return redirect(url_for('main.manage_categories'))
+            return redirect(url_for('categories.manage_categories'))
         except SQLAlchemyError as e:
             db.session.rollback()
             current_app.logger.error(f'Database error in edit_category route: {str(e)}')
@@ -155,7 +155,7 @@ def delete_category(category_id):
         db.session.delete(category)
         db.session.commit()
         flash('Category deleted successfully.', 'success')
-        return redirect(url_for('main.manage_categories'))
+        return redirect(url_for('categories.manage_categories'))
     except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(f'Database error in delete_category route: {str(e)}')

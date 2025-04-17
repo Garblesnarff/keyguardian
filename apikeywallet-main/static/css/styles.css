@@ -391,16 +391,40 @@ h2 {
     height: 100%;
     overflow: auto;
     background-color: rgba(0,0,0,0.4);
+    justify-content: center;
+    align-items: center;
 }
 
 .modal-content {
     background-color: #031F2F;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #022A44;
+    margin: auto;
+    padding: 25px;
+    border: 1px solid #03A9F4;
+    border-radius: 8px;
     width: 80%;
     max-width: 500px;
     color: var(--text-color);
+    box-shadow: 0 0 15px rgba(3, 169, 244, 0.3);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.modal h3 {
+    margin-bottom: 15px;
+    color: #03A9F4;
+    font-size: 1.4rem;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #bd2130;
 }
 
 .toggle-visibility-btn {
