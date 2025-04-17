@@ -44,6 +44,7 @@ class User(UserMixin, db.Model):
         date_joined (datetime): Account creation date
         api_keys (list): User's API keys
         categories (list): User's categories
+        is_admin (bool): Admin role flag
     """
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -51,6 +52,7 @@ class User(UserMixin, db.Model):
     date_joined = db.Column(db.DateTime, default=datetime.utcnow)
     api_keys = db.relationship('APIKey', backref='user', lazy='dynamic')
     categories = db.relationship('Category', backref='user', lazy='dynamic')
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
     def set_password(self, password):
         """

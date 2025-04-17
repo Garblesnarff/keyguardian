@@ -69,6 +69,9 @@ def register():
 
         new_user = User(email=email)
         new_user.set_password(password)
+        # Optionally: make first user admin
+        if User.query.count() == 0:
+            new_user.is_admin = True
         db.session.add(new_user)
         db.session.commit()
 
@@ -100,6 +103,7 @@ def login():
             user = User.query.filter_by(email=email).first()
             if user and user.check_password(password):
                 login_user(user)
+                # Optionally: pass is_admin to frontend via session or API if needed
                 return redirect(url_for('main.wallet'))
             else:
                 flash('Invalid email or password.', 'danger')
