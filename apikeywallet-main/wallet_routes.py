@@ -44,6 +44,16 @@ main = Blueprint('main', __name__)
 # ================================
 # Routes
 # ================================
+@main.route('/')
+def index():
+    """
+    Display the landing page.
+
+    Returns:
+        Rendered landing template
+    """
+    return render_template('landing.html')
+
 @main.route('/wallet')
 @main.route('/wallet/<int:category_id>')
 @login_required
@@ -119,17 +129,9 @@ def add_key():
             db.session.add(new_key)
             db.session.commit()
 
-            category = Category.query.get(new_key.category_id) if new_key.category_id else None
-            return jsonify({
-                'success': True,
-                'message': 'API Key added successfully.',
-                'key': {
-                    'id': new_key.id,
-                    'key_name': new_key.key_name,
-                    'category_id': new_key.category_id,
-                    'category_name': category.name if category else 'Uncategorized'
-                }
-            }), 200
+            db.session.commit()
+            flash('API Key added successfully.', 'success')
+            return redirect(url_for('main.wallet'))
         except SQLAlchemyError as e:
             db.session.rollback()
             current_app.logger.error(f"Database error in add_key route: {str(e)}")

@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: repl-nix-workspace
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: email-validator>=2.2.0
+Requires-Dist: flask>=3.0.3
+Requires-Dist: flask-sqlalchemy>=3.1.1
+Requires-Dist: psycopg2-binary>=2.9.9
+Requires-Dist: flask-login>=0.6.3
+Requires-Dist: flask-wtf>=1.2.1
+Requires-Dist: cryptography>=43.0.1
+Requires-Dist: supabase>=2.7.4
+Requires-Dist: flask-migrate>=4.0.7
