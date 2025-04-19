@@ -314,9 +314,16 @@ h2 {
     border: 1px solid #f5c6cb;
 }
 
-.centered-text {
+.centered-text,
+.text-center {
     text-align: center;
 }
+
+.centered-buttons {
+    display: flex;
+    justify-content: center;
+}
+
 
 .auth-container {
     display: flex;
@@ -494,7 +501,7 @@ h2 {
 
 .hero {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 60px;
     position: relative;
@@ -504,6 +511,7 @@ h2 {
     animation: gradientShift 10s ease infinite;
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(2, 153, 201, 0.3);
+    padding: 40px 30px;
 }
 
 .hero-content {

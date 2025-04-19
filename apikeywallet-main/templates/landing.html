@@ -5,10 +5,10 @@
 
   <!-- Hero Section -->
   <section class="hero">
-    <div class="hero-content">
+    <div class="hero-content text-center">
       <h1 class="main-headline">The Secure API Key Vault for Developers</h1>
       <p class="tagline">Encrypt, organize, and access your API keys effortlessly</p>
-      <div class="cta-buttons">
+      <div class="cta-buttons centered-buttons">
         <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Get Started Free</a>
         <a href="#features" class="btn btn-secondary btn-lg">Learn More</a>
       </div>
@@ -18,60 +18,24 @@
     </div>
   </section>
 
-  <!-- Trusted By -->
-  <section class="trusted-by">
-    <h2>Trusted by Developers Worldwide</h2>
-    <div class="trusted-logos">
-      <img src="https://dummyimage.com/100x40/0299C9/ffffff&text=GitHub" alt="GitHub">
-      <img src="https://dummyimage.com/100x40/0299C9/ffffff&text=Vercel" alt="Vercel">
-      <img src="https://dummyimage.com/100x40/0299C9/ffffff&text=Netlify" alt="Netlify">
-      <img src="https://dummyimage.com/100x40/0299C9/ffffff&text=AWS" alt="AWS">
-    </div>
-  </section>
-
   <!-- Features -->
   <section id="features" class="features">
-    <h2>Why Developers Love KeyGuardian</h2>
+    <h2>Why Use KeyGuardian</h2>
     <div class="feature-list">
       <div class="feature-item">
         <i class="fas fa-lock"></i>
         <h3>End-to-End Encryption</h3>
         <p>Your API keys are encrypted before they leave your device.</p>
-        <pre><code># Store a new key
-keyguardian add --name "Stripe" --key sk_test_123</code></pre>
       </div>
       <div class="feature-item">
-        <i class="fas fa-code"></i>
-        <h3>CLI & API Access</h3>
-        <p>Manage keys via command line or integrate with your CI/CD pipeline.</p>
-        <pre><code># Fetch a key in CI
-keyguardian get --name "Stripe"</code></pre>
+        <i class="fas fa-layer-group"></i>
+        <h3>Organized Categories</h3>
+        <p>Keep your keys organized with custom categories.</p>
       </div>
       <div class="feature-item">
-        <i class="fas fa-folder"></i>
-        <h3>Organize by Project</h3>
-        <p>Group keys by project, environment, or team.</p>
-        <pre><code># List all keys in a project
-keyguardian list --project "MyApp"</code></pre>
-      </div>
-    </div>
-  </section>
-
-  <!-- Testimonials -->
-  <section class="testimonials">
-    <h2>What Developers Are Saying</h2>
-    <div class="testimonial-list">
-      <div class="testimonial-item">
-        <p>"KeyGuardian makes managing secrets painless. Love the CLI integration!"</p>
-        <span>- Alex, Backend Engineer</span>
-      </div>
-      <div class="testimonial-item">
-        <p>"Finally, a tool that keeps my API keys safe and accessible."</p>
-        <span>- Jamie, Full Stack Developer</span>
-      </div>
-      <div class="testimonial-item">
-        <p>"The encryption and project grouping features are game changers."</p>
-        <span>- Sam, DevOps Specialist</span>
+        <i class="fas fa-shield-alt"></i>
+        <h3>Secure Access</h3>
+        <p>Easily access your keys when you need them, securely protected.</p>
       </div>
     </div>
   </section>
@@ -79,8 +43,8 @@ keyguardian list --project "MyApp"</code></pre>
   <!-- Final Call to Action -->
   <section class="final-cta">
     <h2>Start Securing Your API Keys Today</h2>
-    <p>Join thousands of developers who trust KeyGuardian</p>
-    <div class="cta-buttons">
+    <p>Keep your API keys organized and protected</p>
+    <div class="cta-buttons centered-buttons">
       <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Get Started Free</a>
       <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">Login</a>
     </div>
@@ -88,3 +52,4 @@ keyguardian list --project "MyApp"</code></pre>
 
 </div>
 {% endblock %}
+</content>

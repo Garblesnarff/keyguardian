@@ -160,4 +160,4 @@ def delete_category(category_id):
         db.session.rollback()
         current_app.logger.error(f'Database error in delete_category route: {str(e)}')
         flash('An error occurred while deleting the category. Please try again later.', 'danger')
-        return redirect(url_for('main.manage_categories'))
+        return redirect(url_for('categories.manage_categories'))
