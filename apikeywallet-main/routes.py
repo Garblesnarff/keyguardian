@@ -349,3 +349,13 @@ def get_categories_and_keys():
     except Exception as e:
         current_app.logger.error(f"Error in get_categories_and_keys route: {str(e)}")
         return jsonify({'error': 'An error occurred while fetching categories and keys.'}), 500
+
+@main.route('/get_user_info')
+@login_required
+def get_user_info():
+    user_info = {
+        'id': current_user.id,
+        'email': current_user.email,
+        'is_admin': current_user.is_admin
+    }
+    return jsonify(user_info)

@@ -3,7 +3,7 @@
 {% block content %}
 <div class="form-container">
     <h2>Edit Category</h2>
-    <form method="POST" action="{{ url_for('main.edit_category', category_id=category.id) }}">
+    <form method="POST" action="{{ url_for('categories.edit_category', category_id=category.id) }}">
         {{ form.hidden_tag() }}
         <div class="form-group">
             {{ form.name.label }}
@@ -14,6 +14,6 @@
         </div>
         {{ form.submit(class="btn btn-primary") }}
     </form>
-    <a href="{{ url_for('main.manage_categories') }}" class="btn btn-secondary mt-3">Back to Manage Categories</a>
+    <a href="{{ url_for('categories.manage_categories') }}" class="btn btn-secondary mt-3">Back to Manage Categories</a>
 </div>
 {% endblock %}

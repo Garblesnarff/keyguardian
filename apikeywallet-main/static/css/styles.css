@@ -314,9 +314,16 @@ h2 {
     border: 1px solid #f5c6cb;
 }
 
-.centered-text {
+.centered-text,
+.text-center {
     text-align: center;
 }
+
+.centered-buttons {
+    display: flex;
+    justify-content: center;
+}
+
 
 .auth-container {
     display: flex;
@@ -391,16 +398,40 @@ h2 {
     height: 100%;
     overflow: auto;
     background-color: rgba(0,0,0,0.4);
+    justify-content: center;
+    align-items: center;
 }
 
 .modal-content {
     background-color: #031F2F;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #022A44;
+    margin: auto;
+    padding: 25px;
+    border: 1px solid #03A9F4;
+    border-radius: 8px;
     width: 80%;
     max-width: 500px;
     color: var(--text-color);
+    box-shadow: 0 0 15px rgba(3, 169, 244, 0.3);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.modal h3 {
+    margin-bottom: 15px;
+    color: #03A9F4;
+    font-size: 1.4rem;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #bd2130;
 }
 
 .toggle-visibility-btn {
@@ -470,11 +501,17 @@ h2 {
 
 .hero {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 60px;
     position: relative;
     overflow: hidden;
+    background: linear-gradient(135deg, #022A44, #0299C9, #022A44);
+    background-size: 400% 400%;
+    animation: gradientShift 10s ease infinite;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(2, 153, 201, 0.3);
+    padding: 40px 30px;
 }
 
 .hero-content {
@@ -491,15 +528,22 @@ h2 {
 .main-headline {
     font-size: 3.5rem;
     font-weight: 800;
-    color: var(--text-color);
+    background: linear-gradient(90deg, #03A9F4, #03F0FF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     margin-bottom: 15px;
     line-height: 1.2;
+    text-shadow: 2px 2px 8px rgba(3, 169, 244, 0.5);
+    animation: fadeInDown 1s ease-out forwards;
 }
 
 .tagline {
     font-size: 1.5rem;
     color: var(--button-color);
     margin-bottom: 30px;
+    opacity: 0;
+    animation: fadeInUp 1.5s ease-out forwards;
+    animation-delay: 0.5s;
 }
 
 .cta-buttons {
@@ -520,10 +564,12 @@ h2 {
 
 .btn-primary.btn-lg {
     background-color: var(--button-color);
+    animation: pulse 2s infinite;
 }
 
 .btn-primary.btn-lg:hover {
     background-color: var(--button-hover-color);
+    animation: none;
 }
 
 .btn-secondary.btn-lg {
@@ -562,6 +608,55 @@ h2 {
     }
 }
 
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(3, 169, 244, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px 5px rgba(3, 169, 244, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(3, 169, 244, 0);
+    }
+}
+
 .features {
     text-align: center;
     margin-bottom: 60px;
@@ -589,6 +684,19 @@ h2 {
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 1s ease forwards;
+}
+
+.feature-item:nth-child(1) {
+    animation-delay: 0.3s;
+}
+.feature-item:nth-child(2) {
+    animation-delay: 0.6s;
+}
+.feature-item:nth-child(3) {
+    animation-delay: 0.9s;
 }
 
 .feature-item:hover {
@@ -618,6 +726,10 @@ h2 {
     padding: 60px 0;
     text-align: center;
     margin-bottom: 60px;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 1s ease forwards;
+    animation-delay: 1.2s;
 }
 
 .benefits h2 {
@@ -645,6 +757,10 @@ h2 {
 
 .faq {
     margin-bottom: 60px;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 1s ease forwards;
+    animation-delay: 1.5s;
 }
 
 .faq h2 {
@@ -697,6 +813,10 @@ h2 {
     background-color: var(--primary-color);
     padding: 60px 0;
     border-radius: 8px;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 1s ease forwards;
+    animation-delay: 1.8s;
 }
 
 .final-cta h2 {
