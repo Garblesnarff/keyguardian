@@ -1,0 +1,57 @@
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+.history/
+
+# Python cache/bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# Virtual environments
+env/
+venv/
+.venv/
+apikeywallet-main/venv/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Coverage / test outputs
+.coverage
+coverage.xml
+htmlcov/
+
+# Local environment files
+.env
+.env.*
+deploy/.env
+deploy/*.env
+*.md
+
+# Logs
+logs/
+*.log
+
+# SQLite / local DBs
+*.sqlite
+*.sqlite3
+apikeywallet-main/app.db
+
+# Misc caches
+.cache/
+.ipynb_checkpoints/
+
+# Backup archives
+*.tgz
+*.tar.gz
+
+

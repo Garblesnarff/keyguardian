@@ -1,0 +1,5 @@
+# Example crontab entry (run `crontab -e` and paste):
+# Nightly at 02:15 UTC
+15 2 * * * S3_BUCKET=my-bucket POSTGRES_HOST=postgres POSTGRES_DB=keyguardian POSTGRES_USER=keyguardian POSTGRES_PASSWORD=secret /opt/keyguardian/scripts/backup_to_s3.sh >> /var/log/keyguardian_backup.log 2>&1
+
+

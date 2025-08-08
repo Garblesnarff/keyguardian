@@ -33,6 +33,9 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from flask_migrate import Migrate
 from dotenv import load_dotenv
+from flask_session import Session
+import redis
+from prometheus_flask_exporter import PrometheusMetrics
 
 # ================================
 # Environment setup
@@ -59,7 +62,22 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ECHO'] = True  # Enable SQLAlchemy echo mode for debugging
+app.config['SQLALCHEMY_ECHO'] = os.environ.get('SQLALCHEMY_ECHO', 'false').lower() == 'true'
+
+# Sessions (Redis-backed in production)
+app.config['SESSION_TYPE'] = os.environ.get('SESSION_TYPE', 'filesystem')
+redis_url = os.environ.get('REDIS_URL')
+if app.config['SESSION_TYPE'] == 'redis' and redis_url:
+    app.config['SESSION_REDIS'] = redis.from_url(redis_url)
+    app.config['SESSION_PERMANENT'] = False
+    app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'true').lower() == 'true'
+    app.config['SESSION_COOKIE_SAMESITE'] = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+    app.config['REMEMBER_COOKIE_SECURE'] = app.config['SESSION_COOKIE_SECURE']
+Session(app)
+
+# Prometheus metrics
+metrics = PrometheusMetrics(app)
+metrics.info('app_info', 'Application info', version='1.0.0')
 
 parsed_url = urlparse(app.config['SQLALCHEMY_DATABASE_URI'])
 logger.info(f"Database URL: {parsed_url.scheme}://{parsed_url.hostname}:{parsed_url.port}{parsed_url.path}")
@@ -131,8 +149,9 @@ from models import User, APIKey, Category
 # ================================
 with app.app_context():
     try:
-        db.create_all()
-        logger.info("Database tables created successfully")
+        if os.environ.get('CREATE_ALL', 'false').lower() == 'true':
+            db.create_all()
+            logger.info("Database tables created successfully")
     except SQLAlchemyError as e:
         logger.error(f"Error creating database tables: {str(e)}")
 

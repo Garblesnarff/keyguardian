@@ -1,0 +1,46 @@
+user  nginx;
+worker_processes  auto;
+
+events { worker_connections 1024; }
+
+http {
+  include       /etc/nginx/mime.types;
+  default_type  application/octet-stream;
+  sendfile        on;
+  keepalive_timeout  65;
+
+  limit_req_zone $binary_remote_addr zone=perip:10m rate=10r/s;
+
+  upstream flask_app {
+    server app:5000;
+    keepalive 32;
+  }
+
+  server {
+    listen 80;
+    server_name ${DOMAIN};
+
+    # ACME challenge path
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+
+    # Nginx stub_status for exporter
+    location = /nginx_status { stub_status; access_log off; allow 127.0.0.1; allow 172.16.0.0/12; allow 10.0.0.0/8; allow 192.168.0.0/16; deny all; }
+
+    # Rate limit
+    limit_req zone=perip burst=20 nodelay;
+
+    # Temporarily serve app over HTTP until cert is issued
+    location / {
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_pass http://flask_app;
+      proxy_read_timeout 60s;
+      proxy_connect_timeout 5s;
+      proxy_send_timeout 60s;
+    }
+  }
+}
+
+
