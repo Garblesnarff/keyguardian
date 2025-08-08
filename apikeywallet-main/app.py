@@ -28,6 +28,7 @@ from urllib.parse import urlparse
 from flask import Flask, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_restx import Api
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
@@ -48,9 +49,8 @@ logger = logging.getLogger(__name__)
 # ================================
 # Initialize extensions
 # ================================
-db = SQLAlchemy()
+from extensions import db, login_manager, api
 migrate = None
-login_manager = LoginManager()
 
 # ================================
 # Flask app factory
@@ -70,6 +70,8 @@ migrate = Migrate(app, db)
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Please log in to access this page.'
+
+api.init_app(app)
 
 # ================================
 # User loader
@@ -137,16 +139,15 @@ with app.app_context():
         logger.error(f"Error creating database tables: {str(e)}")
 
 # ================================
-# Register blueprints
+# API Documentation Setup
 # ================================
-from wallet_routes import main as wallet_blueprint
-app.register_blueprint(wallet_blueprint)
+from wallet_routes import wallet_ns
+from auth_routes import auth_ns
+from category_routes import category_ns
 
-from auth_routes import auth as auth_blueprint
-app.register_blueprint(auth_blueprint)
-
-from category_routes import categories as category_blueprint
-app.register_blueprint(category_blueprint)
+api.add_namespace(wallet_ns)
+api.add_namespace(auth_ns)
+api.add_namespace(category_ns)
 
 # ================================
 # Run the app
