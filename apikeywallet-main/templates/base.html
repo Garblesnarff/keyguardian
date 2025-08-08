@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KeyGuardian</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        /* Progressive enhancement: show keyboard shortcuts hint */
+        .shortcut-hint { color: #9ccce6; font-size: 12px; margin-left: 8px; }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
@@ -13,7 +17,7 @@
         <div class="container">
             <div id="branding">
                 <img src="{{ url_for('static', filename='img/keyguardian-logo.webp') }}" alt="KeyGuardian Logo" class="logo">
-                <h1>KeyGuardian</h1>
+                <h1>KeyGuardian <span class="shortcut-hint"><kbd>G</kbd> go to wallet</span></h1>
             </div>
             <nav>
                 <ul>

@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Add page loading skeleton state briefly to smooth FOUC
+    document.body.classList.add('is-loading');
+    setTimeout(() => document.body.classList.remove('is-loading'), 350);
+
     // Toggle visibility button
     const toggleButtons = document.querySelectorAll('.toggle-visibility-btn');
     toggleButtons.forEach(btn => {
@@ -31,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Copy button
+    // Copy button with success micro-interaction
     const copyButtons = document.querySelectorAll('.copy-btn');
     copyButtons.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -47,11 +51,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.key) {
                     navigator.clipboard.writeText(data.key)
                         .then(() => {
-                            const originalIcon = this.querySelector('i').className;
-                            this.querySelector('i').className = 'fas fa-check';
+                            const icon = this.querySelector('i');
+                            const originalIcon = icon.className;
+                            icon.className = 'fas fa-check';
+                            this.setAttribute('title', 'Copied!');
                             setTimeout(() => {
-                                this.querySelector('i').className = originalIcon;
-                            }, 1000);
+                                icon.className = originalIcon;
+                                this.setAttribute('title', 'Copy Key');
+                            }, 1200);
                         });
                 }
             })
@@ -119,11 +126,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Confirm delete
+    // Confirm delete with smooth card exit
     const confirmDelete = document.getElementById('confirmDelete');
     if (confirmDelete) {
         confirmDelete.addEventListener('click', function() {
             if (currentKeyId) {
+                // optimistic UI: add exit animation
+                const card = document.querySelector(`.api-key .delete-btn[data-key-id="${currentKeyId}"]`)?.closest('.api-key');
+                if (card) {
+                    card.classList.add('card-exit');
+                }
+
                 fetch(`/delete_key/${currentKeyId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -133,7 +146,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     if (data.success) {
                         deleteModal.style.display = 'none';
-                        location.reload();
+                        // remove card after animation then reload to re-group
+                        if (card) {
+                            setTimeout(() => {
+                                card.remove();
+                                location.reload();
+                            }, 220);
+                        } else {
+                            location.reload();
+                        }
                     }
                 })
                 .catch(error => console.error('Error:', error));
@@ -180,6 +201,53 @@ document.addEventListener('DOMContentLoaded', function() {
         if (event.target === deleteModal) {
             deleteModal.style.display = 'none';
             currentKeyId = null;
+        }
+    });
+
+    // Keyboard shortcut: G to go to wallet
+    window.addEventListener('keydown', function(e) {
+        if ((e.key === 'g' || e.key === 'G') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            const walletLink = document.querySelector('a[href*="/wallet"]');
+            if (walletLink) {
+                walletLink.click();
+            }
+        }
+    });
+
+    // Password strength indicator (register/login forms)
+    const passwordInputs = document.querySelectorAll('input[type="password"]');
+    passwordInputs.forEach(input => {
+        // Only add meter once
+        if (!input.dataset.meterAttached) {
+            const meter = document.createElement('div');
+            meter.className = 'strength-meter';
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            meter.appendChild(bar);
+            input.insertAdjacentElement('afterend', meter);
+            input.dataset.meterAttached = 'true';
+
+            const evaluate = (value) => {
+                let score = 0;
+                if (value.length >= 8) score++;
+                if (/[A-Z]/.test(value)) score++;
+                if (/[0-9]/.test(value)) score++;
+                if (/[^A-Za-z0-9]/.test(value)) score++;
+                if (value.length >= 12) score++;
+                if (score <= 2) {
+                    meter.classList.remove('strength-medium','strength-strong');
+                    meter.classList.add('strength-weak');
+                } else if (score === 3 || score === 4) {
+                    meter.classList.remove('strength-weak','strength-strong');
+                    meter.classList.add('strength-medium');
+                } else {
+                    meter.classList.remove('strength-weak','strength-medium');
+                    meter.classList.add('strength-strong');
+                }
+            };
+
+            input.addEventListener('input', (e) => evaluate(e.target.value));
+            evaluate(input.value || '');
         }
     });
 });
