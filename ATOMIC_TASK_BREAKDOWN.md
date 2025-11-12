@@ -1902,4 +1902,1202 @@ The current breakdown shows:
 
 Each task is designed to be handed to a sub-agent with all context needed.
 
-Should I continue with the remaining phases?
+---
+
+## 🛡️ **PHASE 3: PRODUCTION HARDENING** (Continued)
+
+### WAVE 3.1 - HTTPS & Security Headers (Parallel preparation)
+
+**[3.1.1] Add Flask-Talisman Dependency**
+```bash
+# Task ID: HTTPS-001
+# Dependencies: Phase 2 complete
+# Time: 2 minutes
+```
+- **Action**: Add Talisman to dependencies
+- **File**: `apikeywallet-main/pyproject.toml`
+- **Add**: `"flask-talisman>=1.1.0",`
+- **Validation**: Dependency listed
+- **Parallel With**: [3.1.2]
+
+**[3.1.2] Install Flask-Talisman**
+```bash
+# Task ID: HTTPS-002
+# Dependencies: [3.1.1]
+# Time: 2 minutes
+```
+- **Action**: Install package
+- **Command**: `pip install flask-talisman`
+- **Validation**: Package installed
+- **Parallel With**: None
+
+**[3.1.3] Initialize Talisman in app.py**
+```python
+# Task ID: HTTPS-003
+# Dependencies: [3.1.2]
+# Time: 10 minutes
+```
+- **Action**: Add HTTPS enforcement and security headers
+- **File**: `apikeywallet-main/app.py`
+- **Location**: After app creation, before routes
+- **Add**:
+  ```python
+  from flask_talisman import Talisman
+
+  if not app.config.get('TESTING'):
+      Talisman(app,
+          force_https=True,
+          strict_transport_security=True,
+          strict_transport_security_max_age=31536000,
+          content_security_policy={
+              'default-src': "'self'",
+              'script-src': "'self' 'unsafe-inline'",
+              'style-src': "'self' 'unsafe-inline'",
+              'img-src': "'self' data:",
+              'font-src': "'self'"
+          },
+          force_https_permanent=True
+      )
+  ```
+- **Validation**: Headers added to responses
+- **Parallel With**: [3.1.4]
+
+**[3.1.4] Create nginx Configuration File**
+```nginx
+# Task ID: HTTPS-004
+# Dependencies: None
+# Time: 15 minutes
+```
+- **Action**: Create reverse proxy config
+- **Output**: `/home/user/keyguardian/deployment/nginx.conf`
+- **Content**:
+  ```nginx
+  # Redirect HTTP to HTTPS
+  server {
+      listen 80;
+      server_name keyguardian.yourdomain.com;
+      return 301 https://$server_name$request_uri;
+  }
+
+  # HTTPS server
+  server {
+      listen 443 ssl http2;
+      server_name keyguardian.yourdomain.com;
+
+      # SSL certificates (will be set up with certbot)
+      ssl_certificate /etc/letsencrypt/live/keyguardian.yourdomain.com/fullchain.pem;
+      ssl_certificate_key /etc/letsencrypt/live/keyguardian.yourdomain.com/privkey.pem;
+
+      # SSL configuration
+      ssl_protocols TLSv1.2 TLSv1.3;
+      ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';
+      ssl_prefer_server_ciphers on;
+      ssl_session_cache shared:SSL:10m;
+      ssl_session_timeout 10m;
+
+      # Security headers (redundant with Talisman, but good practice)
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+
+      # Proxy to Flask app
+      location / {
+          proxy_pass http://127.0.0.1:5000;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_redirect off;
+      }
+
+      # Static files (optional optimization)
+      location /static {
+          alias /home/user/keyguardian/apikeywallet-main/static;
+          expires 30d;
+          add_header Cache-Control "public, immutable";
+      }
+  }
+  ```
+- **Validation**: File created
+- **Parallel With**: [3.1.3]
+
+**[3.1.5] Document SSL Certificate Setup**
+```markdown
+# Task ID: HTTPS-005
+# Dependencies**: [3.1.4]
+# Time: 10 minutes
+```
+- **Action**: Create SSL setup instructions
+- **Output**: `/home/user/keyguardian/deployment/SSL_SETUP.md`
+- **Content**:
+  ```markdown
+  # SSL Certificate Setup with Let's Encrypt
+
+  ## Prerequisites
+  - Domain name pointing to your server
+  - nginx installed
+  - Port 80 and 443 open in firewall
+
+  ## Install Certbot
+  ```bash
+  sudo apt-get update
+  sudo apt-get install certbot python3-certbot-nginx
+  ```
+
+  ## Obtain Certificate
+  ```bash
+  sudo certbot --nginx -d keyguardian.yourdomain.com
+  ```
+
+  ## Auto-renewal
+  Certbot installs a cron job automatically. Verify:
+  ```bash
+  sudo certbot renew --dry-run
+  ```
+
+  ## Test SSL Configuration
+  Visit: https://www.ssllabs.com/ssltest/
+  Target grade: A or A+
+  ```
+- **Validation**: Documentation complete
+- **Parallel With**: None
+
+### WAVE 3.2 - Database Security (Parallel)
+
+**[3.2.1] Enable PostgreSQL SSL in Config**
+```python
+# Task ID: DB-001
+# Dependencies: None
+# Time: 5 minutes
+```
+- **Action**: Require SSL for database connections
+- **File**: `apikeywallet-main/config.py`
+- **Location**: ProductionConfig class
+- **Modify**:
+  ```python
+  # Change DATABASE_URL to append SSL mode
+  SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+  if SQLALCHEMY_DATABASE_URI and not SQLALCHEMY_DATABASE_URI.endswith('sslmode=require'):
+      SQLALCHEMY_DATABASE_URI += '?sslmode=require'
+  ```
+- **Validation**: SSL mode added
+- **Parallel With**: [3.2.2], [3.2.3]
+
+**[3.2.2] Configure Connection Pooling**
+```python
+# Task ID: DB-002
+# Dependencies: None
+# Time: 5 minutes
+```
+- **Action**: Add connection pool settings
+- **File**: `apikeywallet-main/config.py`
+- **Location**: ProductionConfig class
+- **Add**:
+  ```python
+  SQLALCHEMY_ENGINE_OPTIONS = {
+      'pool_size': 10,
+      'pool_recycle': 3600,
+      'pool_pre_ping': True,
+      'max_overflow': 20
+  }
+  ```
+- **Validation**: Settings added
+- **Parallel With**: [3.2.1], [3.2.3]
+
+**[3.2.3] Document Database User Creation**
+```sql
+# Task ID: DB-003
+# Dependencies: None
+# Time: 10 minutes
+```
+- **Action**: Create SQL script for minimal privilege user
+- **Output**: `/home/user/keyguardian/deployment/create_db_user.sql`
+- **Content**:
+  ```sql
+  -- Create dedicated application user (run as postgres superuser)
+
+  -- Create user
+  CREATE USER keyguardian_app WITH PASSWORD 'REPLACE_WITH_STRONG_PASSWORD';
+
+  -- Grant connection
+  GRANT CONNECT ON DATABASE keyguardian TO keyguardian_app;
+
+  -- Grant schema usage
+  GRANT USAGE ON SCHEMA public TO keyguardian_app;
+
+  -- Grant table permissions
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO keyguardian_app;
+
+  -- Grant sequence permissions (for auto-increment IDs)
+  GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO keyguardian_app;
+
+  -- Grant permissions on future tables (important for migrations)
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO keyguardian_app;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO keyguardian_app;
+
+  -- Verify permissions
+  \dp
+  ```
+- **Validation**: Script created
+- **Parallel With**: [3.2.1], [3.2.2]
+
+**[3.2.4] Create Database Backup Script**
+```bash
+# Task ID: DB-004
+# Dependencies: None
+# Time: 20 minutes
+```
+- **Action**: Create automated backup script
+- **Output**: `/home/user/keyguardian/deployment/backup_database.sh`
+- **Content**:
+  ```bash
+  #!/bin/bash
+  #
+  # Database backup script for KeyGuardian
+  # Run daily via cron
+  #
+
+  set -e
+
+  # Configuration
+  DB_NAME="keyguardian"
+  DB_USER="keyguardian_app"
+  BACKUP_DIR="/var/backups/keyguardian"
+  RETENTION_DAYS=30
+  GPG_RECIPIENT="admin@yourdomain.com"
+
+  # Create backup directory if needed
+  mkdir -p "$BACKUP_DIR"
+
+  # Generate filename with timestamp
+  DATE=$(date +%Y%m%d_%H%M%S)
+  BACKUP_FILE="$BACKUP_DIR/keyguardian_$DATE.sql"
+  COMPRESSED_FILE="$BACKUP_FILE.gz"
+  ENCRYPTED_FILE="$COMPRESSED_FILE.gpg"
+
+  echo "Starting backup at $(date)"
+
+  # Dump database
+  pg_dump -U "$DB_USER" -h localhost "$DB_NAME" > "$BACKUP_FILE"
+
+  # Compress
+  gzip "$BACKUP_FILE"
+
+  # Encrypt
+  gpg --encrypt --recipient "$GPG_RECIPIENT" "$COMPRESSED_FILE"
+
+  # Remove unencrypted compressed file
+  rm "$COMPRESSED_FILE"
+
+  # Set permissions
+  chmod 600 "$ENCRYPTED_FILE"
+
+  # Delete old backups
+  find "$BACKUP_DIR" -name "keyguardian_*.sql.gz.gpg" -mtime +$RETENTION_DAYS -delete
+
+  echo "Backup completed: $ENCRYPTED_FILE"
+  echo "Backup size: $(du -h "$ENCRYPTED_FILE" | cut -f1)"
+
+  # Optional: Upload to cloud storage
+  # aws s3 cp "$ENCRYPTED_FILE" s3://your-backup-bucket/keyguardian/
+
+  # Log completion
+  logger "KeyGuardian database backup completed successfully"
+  ```
+- **Make executable**: `chmod +x backup_database.sh`
+- **Validation**: Script created and executable
+- **Parallel With**: [3.2.5]
+
+**[3.2.5] Create Backup Restoration Script**
+```bash
+# Task ID: DB-005
+# Dependencies: None
+# Time: 15 minutes
+```
+- **Action**: Create restore script
+- **Output**: `/home/user/keyguardian/deployment/restore_database.sh`
+- **Content**:
+  ```bash
+  #!/bin/bash
+  #
+  # Database restore script for KeyGuardian
+  #
+
+  set -e
+
+  if [ $# -ne 1 ]; then
+      echo "Usage: $0 <backup_file.sql.gz.gpg>"
+      exit 1
+  fi
+
+  BACKUP_FILE="$1"
+
+  if [ ! -f "$BACKUP_FILE" ]; then
+      echo "Error: Backup file not found: $BACKUP_FILE"
+      exit 1
+  fi
+
+  echo "WARNING: This will overwrite the current database!"
+  read -p "Are you sure you want to continue? (yes/no): " CONFIRM
+
+  if [ "$CONFIRM" != "yes" ]; then
+      echo "Restore cancelled"
+      exit 0
+  fi
+
+  # Decrypt
+  gpg --decrypt "$BACKUP_FILE" > /tmp/restore_temp.sql.gz
+
+  # Decompress
+  gunzip /tmp/restore_temp.sql.gz
+
+  # Stop application (if running)
+  sudo systemctl stop keyguardian 2>/dev/null || true
+
+  # Drop and recreate database
+  psql -U postgres -c "DROP DATABASE IF EXISTS keyguardian;"
+  psql -U postgres -c "CREATE DATABASE keyguardian;"
+
+  # Restore
+  psql -U postgres keyguardian < /tmp/restore_temp.sql
+
+  # Clean up
+  rm /tmp/restore_temp.sql
+
+  # Restart application
+  sudo systemctl start keyguardian 2>/dev/null || true
+
+  echo "Database restore completed successfully"
+  ```
+- **Make executable**: `chmod +x restore_database.sh`
+- **Validation**: Script created
+- **Parallel With**: [3.2.4]
+
+**[3.2.6] Create Cron Job for Backups**
+```bash
+# Task ID: DB-006
+# Dependencies: [3.2.4]
+# Time: 5 minutes
+```
+- **Action**: Document cron setup
+- **Output**: `/home/user/keyguardian/deployment/BACKUP_CRON.md`
+- **Content**:
+  ```markdown
+  # Automated Backup Setup
+
+  ## Add to crontab
+  ```bash
+  sudo crontab -e
+  ```
+
+  ## Add this line (runs daily at 2 AM)
+  ```
+  0 2 * * * /home/user/keyguardian/deployment/backup_database.sh >> /var/log/keyguardian_backup.log 2>&1
+  ```
+
+  ## Verify cron job
+  ```bash
+  sudo crontab -l
+  ```
+
+  ## Test backup manually
+  ```bash
+  sudo /home/user/keyguardian/deployment/backup_database.sh
+  ```
+
+  ## Monitor logs
+  ```bash
+  tail -f /var/log/keyguardian_backup.log
+  ```
+  ```
+- **Validation**: Documentation created
+- **Parallel With**: None
+
+### WAVE 3.3 - Error Handling & Monitoring (Parallel)
+
+**[3.3.1] Add Sentry SDK Dependency**
+```bash
+# Task ID: MON-001
+# Dependencies: None
+# Time: 2 minutes
+```
+- **Action**: Add Sentry to dependencies
+- **File**: `apikeywallet-main/pyproject.toml`
+- **Add**: `"sentry-sdk[flask]>=2.0.0",`
+- **Validation**: Dependency listed
+- **Parallel With**: [3.3.3]
+
+**[3.3.2] Install Sentry SDK**
+```bash
+# Task ID: MON-002
+# Dependencies: [3.3.1]
+# Time: 2 minutes
+```
+- **Action**: Install package
+- **Command**: `pip install "sentry-sdk[flask]"`
+- **Validation**: Package installed
+- **Parallel With**: None
+
+**[3.3.3] Initialize Sentry in app.py**
+```python
+# Task ID: MON-003
+# Dependencies: [3.3.2]
+# Time: 10 minutes
+```
+- **Action**: Add error tracking
+- **File**: `apikeywallet-main/app.py`
+- **Location**: After imports, before app creation
+- **Add**:
+  ```python
+  import sentry_sdk
+  from sentry_sdk.integrations.flask import FlaskIntegration
+
+  # Load config first to get environment
+  config_name = os.environ.get('FLASK_ENV', 'development')
+
+  # Initialize Sentry for production only
+  if config_name == 'production':
+      sentry_sdk.init(
+          dsn=os.environ.get('SENTRY_DSN'),
+          integrations=[FlaskIntegration()],
+          traces_sample_rate=0.1,  # 10% transaction sampling
+          environment=config_name,
+          release=os.environ.get('APP_VERSION', 'unknown'),
+          before_send=lambda event, hint: filter_sensitive_data(event)
+      )
+
+  def filter_sensitive_data(event):
+      """Remove sensitive data from Sentry events."""
+      if 'request' in event:
+          # Remove authentication headers
+          if 'headers' in event['request']:
+              event['request']['headers'].pop('Authorization', None)
+              event['request']['headers'].pop('Cookie', None)
+
+          # Remove sensitive form data
+          if 'data' in event['request']:
+              sensitive_fields = ['password', 'api_key', 'secret']
+              for field in sensitive_fields:
+                  if field in event['request']['data']:
+                      event['request']['data'][field] = '[REDACTED]'
+
+      return event
+  ```
+- **Validation**: Sentry initialized
+- **Parallel With**: [3.3.4]
+
+**[3.3.4] Create Custom Error Pages**
+```html
+# Task ID: MON-004
+# Dependencies: None
+# Time: 30 minutes
+```
+- **Action**: Create error templates
+- **Output Files**:
+  - `apikeywallet-main/templates/errors/404.html`
+  - `apikeywallet-main/templates/errors/403.html`
+  - `apikeywallet-main/templates/errors/500.html`
+  - `apikeywallet-main/templates/errors/429.html`
+- **Base Template** (404.html):
+  ```html
+  {% extends "base.html" %}
+
+  {% block title %}Page Not Found - KeyGuardian{% endblock %}
+
+  {% block content %}
+  <div class="error-container">
+      <h1>404</h1>
+      <h2>Page Not Found</h2>
+      <p>The page you're looking for doesn't exist.</p>
+      <a href="{{ url_for('main.wallet') }}" class="btn btn-primary">Go to Dashboard</a>
+  </div>
+  {% endblock %}
+  ```
+- **Validation**: All 4 error templates created
+- **Parallel With**: [3.3.3], [3.3.5]
+
+**[3.3.5] Add Error Handlers to app.py**
+```python
+# Task ID: MON-005
+# Dependencies: [3.3.4]
+# Time: 10 minutes
+```
+- **Action**: Register error handlers
+- **File**: `apikeywallet-main/app.py`
+- **Location**: After blueprint registration
+- **Add**:
+  ```python
+  # Error handlers
+  @app.errorhandler(404)
+  def not_found(error):
+      """Handle 404 errors."""
+      return render_template('errors/404.html'), 404
+
+  @app.errorhandler(403)
+  def forbidden(error):
+      """Handle 403 errors."""
+      return render_template('errors/403.html'), 403
+
+  @app.errorhandler(500)
+  def internal_error(error):
+      """Handle 500 errors."""
+      db.session.rollback()
+      return render_template('errors/500.html'), 500
+
+  @app.errorhandler(429)
+  def ratelimit_error(error):
+      """Handle rate limit exceeded."""
+      return render_template('errors/429.html'), 429
+  ```
+- **Validation**: Handlers registered
+- **Parallel With**: [3.3.4]
+
+**[3.3.6] Add SENTRY_DSN to .env.example**
+```bash
+# Task ID: MON-006
+# Dependencies: None
+# Time: 2 minutes
+```
+- **Action**: Document Sentry configuration
+- **File**: `apikeywallet-main/.env.example`
+- **Add**: `SENTRY_DSN=https://your-sentry-dsn-here@sentry.io/project-id`
+- **Validation**: Variable documented
+- **Parallel With**: All above
+
+**[3.3.7] Create Health Check Endpoint**
+```python
+# Task ID: MON-007
+# Dependencies: None
+# Time: 10 minutes
+```
+- **Action**: Add health check for monitoring
+- **File**: `apikeywallet-main/app.py`
+- **Location**: After error handlers
+- **Add**:
+  ```python
+  @app.route('/health')
+  def health():
+      """
+      Health check endpoint for monitoring and load balancers.
+
+      Checks:
+      - Application is running
+      - Database connection works
+      - Basic application state
+
+      Returns:
+          JSON response with health status
+      """
+      health_status = {
+          'status': 'healthy',
+          'timestamp': datetime.utcnow().isoformat(),
+          'checks': {}
+      }
+
+      # Check database
+      try:
+          db.session.execute('SELECT 1')
+          health_status['checks']['database'] = 'connected'
+      except Exception as e:
+          health_status['status'] = 'unhealthy'
+          health_status['checks']['database'] = f'error: {str(e)}'
+          return jsonify(health_status), 503
+
+      # Check migrations are up to date
+      try:
+          from flask_migrate import current, heads
+          current_rev = current()
+          head_rev = heads()
+          if current_rev != head_rev:
+              health_status['checks']['migrations'] = 'outdated'
+          else:
+              health_status['checks']['migrations'] = 'current'
+      except Exception as e:
+          health_status['checks']['migrations'] = f'unknown: {str(e)}'
+
+      return jsonify(health_status), 200
+  ```
+- **Validation**: Endpoint returns 200
+- **Parallel With**: All above
+
+### WAVE 3.4 - Structured Logging (Sequential due to app.py changes)
+
+**[3.4.1] Create logging_config.py**
+```python
+# Task ID: LOG-004
+# Dependencies: None
+# Time: 20 minutes
+```
+- **Action**: Create JSON logging module
+- **Output**: `apikeywallet-main/logging_config.py`
+- **Content**:
+  ```python
+  """
+  logging_config.py - Structured logging configuration
+
+  Implements JSON logging for easier parsing and analysis.
+  """
+
+  import logging
+  import json
+  from datetime import datetime
+
+
+  class JSONFormatter(logging.Formatter):
+      """Format logs as JSON for structured logging."""
+
+      def format(self, record):
+          """Format log record as JSON."""
+          log_data = {
+              'timestamp': datetime.utcnow().isoformat() + 'Z',
+              'level': record.levelname,
+              'message': record.getMessage(),
+              'logger': record.name,
+              'module': record.module,
+              'function': record.funcName,
+              'line': record.lineno
+          }
+
+          # Add exception info if present
+          if record.exc_info:
+              log_data['exception'] = self.formatException(record.exc_info)
+
+          # Add custom fields if present
+          if hasattr(record, 'user_id'):
+              log_data['user_id'] = record.user_id
+          if hasattr(record, 'request_id'):
+              log_data['request_id'] = record.request_id
+          if hasattr(record, 'ip_address'):
+              log_data['ip_address'] = record.ip_address
+
+          return json.dumps(log_data)
+
+
+  def setup_logging(app):
+      """
+      Configure application logging.
+
+      Args:
+          app: Flask application instance
+      """
+      # Create handler
+      handler = logging.StreamHandler()
+
+      # Use JSON formatter in production, simple in development
+      if app.config.get('ENV') == 'production':
+          handler.setFormatter(JSONFormatter())
+      else:
+          formatter = logging.Formatter(
+              '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+          )
+          handler.setFormatter(formatter)
+
+      # Set log level
+      log_level = app.config.get('LOG_LEVEL', logging.INFO)
+      handler.setLevel(log_level)
+      app.logger.addHandler(handler)
+      app.logger.setLevel(log_level)
+
+      # Reduce noise from third-party libraries
+      logging.getLogger('werkzeug').setLevel(logging.WARNING)
+      logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
+  ```
+- **Validation**: Module created
+- **Parallel With**: [3.4.2]
+
+**[3.4.2] Add Request ID Middleware**
+```python
+# Task ID: LOG-005
+# Dependencies: None
+# Time: 15 minutes
+```
+- **Action**: Add request tracking
+- **File**: `apikeywallet-main/app.py`
+- **Location**: After app creation
+- **Add**:
+  ```python
+  import uuid
+  from flask import g, request
+
+  @app.before_request
+  def before_request():
+      """Attach request ID and database session before each request."""
+      # Generate unique request ID
+      g.request_id = str(uuid.uuid4())
+
+      # Attach database session (existing code)
+      g.db = get_db_session()
+
+  @app.after_request
+  def after_request(response):
+      """Log request completion and add request ID header."""
+      # Add request ID to response headers
+      response.headers['X-Request-ID'] = g.request_id
+
+      # Log request completion
+      app.logger.info('Request completed', extra={
+          'request_id': g.request_id,
+          'method': request.method,
+          'path': request.path,
+          'status': response.status_code,
+          'user_id': current_user.id if current_user.is_authenticated else None,
+          'ip_address': request.remote_addr
+      })
+
+      return response
+  ```
+- **Validation**: Request ID added to responses
+- **Parallel With**: [3.4.1]
+
+**[3.4.3] Initialize Logging in app.py**
+```python
+# Task ID: LOG-006
+# Dependencies: [3.4.1], [3.4.2]
+# Time: 5 minutes
+```
+- **Action**: Set up structured logging
+- **File**: `apikeywallet-main/app.py`
+- **Location**: After config loading
+- **Add**:
+  ```python
+  from logging_config import setup_logging
+
+  # Setup logging
+  setup_logging(app)
+  ```
+- **Validation**: JSON logs in production
+- **Parallel With**: None
+
+**[3.4.4] Add LOG_LEVEL to Config**
+```python
+# Task ID: LOG-007
+# Dependencies: None
+# Time: 3 minutes
+```
+- **Action**: Make log level configurable
+- **File**: `apikeywallet-main/config.py`
+- **Add to each config class**:
+  ```python
+  class DevelopmentConfig(Config):
+      DEBUG = True
+      LOG_LEVEL = logging.DEBUG
+
+  class ProductionConfig(Config):
+      DEBUG = False
+      LOG_LEVEL = logging.INFO
+  ```
+- **Validation**: Config updated
+- **Parallel With**: [3.4.5]
+
+**[3.4.5] Update Sensitive Logging**
+```python
+# Task ID: LOG-008
+# Dependencies: None
+# Time: 15 minutes
+```
+- **Action**: Remove sensitive data from logs
+- **Files**: All route files
+- **Changes**:
+  - Remove `logging.debug(f'Encrypted key: {encrypted_key}')` statements
+  - Remove `logging.debug(f'Decrypted key: {decrypted_key}')` statements
+  - Replace with: `logging.info('Key operation completed', extra={'key_id': key_id})`
+- **Validation**: No sensitive data in logs
+- **Parallel With**: [3.4.4]
+
+### WAVE 3.5 - Performance Optimization (Parallel)
+
+**[3.5.1] Add Database Indexes Migration**
+```python
+# Task ID: PERF-001
+# Dependencies: None
+# Time: 15 minutes
+```
+- **Action**: Create migration for performance indexes
+- **File**: New migration file
+- **Content**:
+  ```python
+  """Add performance indexes
+
+  Revision ID: perf_indexes_001
+  """
+  from alembic import op
+
+  def upgrade():
+      # APIKey indexes
+      op.create_index(
+          'idx_apikey_user_category',
+          'api_key',
+          ['user_id', 'category_id']
+      )
+      op.create_index(
+          'idx_apikey_user_name',
+          'api_key',
+          ['user_id', 'key_name']
+      )
+
+      # AuditLog indexes
+      op.create_index(
+          'idx_audit_user_timestamp',
+          'audit_log',
+          ['user_id', 'timestamp']
+      )
+      op.create_index(
+          'idx_audit_action_timestamp',
+          'audit_log',
+          ['action', 'timestamp']
+      )
+
+      # Category indexes
+      op.create_index(
+          'idx_category_user',
+          'category',
+          ['user_id']
+      )
+
+  def downgrade():
+      op.drop_index('idx_apikey_user_category', 'api_key')
+      op.drop_index('idx_apikey_user_name', 'api_key')
+      op.drop_index('idx_audit_user_timestamp', 'audit_log')
+      op.drop_index('idx_audit_action_timestamp', 'audit_log')
+      op.drop_index('idx_category_user', 'category')
+  ```
+- **Command**: `flask db migrate -m "Add performance indexes"`
+- **Validation**: Migration created
+- **Parallel With**: [3.5.2], [3.5.3]
+
+**[3.5.2] Add Flask-Caching Dependency**
+```bash
+# Task ID: PERF-002
+# Dependencies: None
+# Time: 2 minutes
+```
+- **Action**: Add caching support
+- **File**: `apikeywallet-main/pyproject.toml`
+- **Add**: `"Flask-Caching>=2.1.0",`
+- **Validation**: Dependency listed
+- **Parallel With**: [3.5.1], [3.5.3]
+
+**[3.5.3] Install Flask-Caching**
+```bash
+# Task ID: PERF-003
+# Dependencies: [3.5.2]
+# Time: 2 minutes
+```
+- **Action**: Install package
+- **Command**: `pip install Flask-Caching`
+- **Validation**: Package installed
+- **Parallel With**: None (needs [3.5.2])
+
+**[3.5.4] Initialize Cache in extensions.py**
+```python
+# Task ID: PERF-004
+# Dependencies: [3.5.3]
+# Time: 10 minutes
+```
+- **Action**: Add cache instance
+- **File**: `apikeywallet-main/extensions.py`
+- **Add**:
+  ```python
+  from flask_caching import Cache
+
+  # Initialize cache
+  cache = Cache(config={
+      'CACHE_TYPE': 'simple',  # Use 'redis' in production
+      'CACHE_DEFAULT_TIMEOUT': 300
+  })
+  ```
+- **Validation**: Cache defined
+- **Parallel With**: [3.5.5]
+
+**[3.5.5] Initialize Cache in app.py**
+```python
+# Task ID: PERF-005
+# Dependencies: [3.5.4]
+# Time: 5 minutes
+```
+- **Action**: Bind cache to app
+- **File**: `apikeywallet-main/app.py`
+- **Location**: After limiter initialization
+- **Add**:
+  ```python
+  from extensions import cache
+
+  # Configure cache based on environment
+  if config_name == 'production':
+      cache.init_app(app, config={
+          'CACHE_TYPE': 'redis',
+          'CACHE_REDIS_URL': os.environ.get('REDIS_URL', 'redis://localhost:6379/0'),
+          'CACHE_DEFAULT_TIMEOUT': 300
+      })
+  else:
+      cache.init_app(app)
+  ```
+- **Validation**: Cache initialized
+- **Parallel With**: None
+
+**[3.5.6] Add Caching to Category Queries**
+```python
+# Task ID: PERF-006
+# Dependencies: [3.5.5]
+# Time: 10 minutes
+```
+- **Action**: Cache category lists
+- **File**: `apikeywallet-main/wallet_routes.py`
+- **Location**: wallet() function
+- **Change**:
+  ```python
+  from extensions import cache
+
+  @main.route('/wallet')
+  @main.route('/wallet/<int:category_id>')
+  @login_required
+  def wallet(category_id=None):
+      # Cache categories per user for 5 minutes
+      cache_key = f'categories_user_{current_user.id}'
+      categories = cache.get(cache_key)
+
+      if categories is None:
+          categories = Category.query.filter_by(user_id=current_user.id).order_by(Category.name).all()
+          cache.set(cache_key, categories, timeout=300)
+
+      # ... rest of function
+  ```
+- **Validation**: Categories cached
+- **Parallel With**: [3.5.7]
+
+**[3.5.7] Add Cache Invalidation on Category Changes**
+```python
+# Task ID: PERF-007
+# Dependencies: [3.5.6]
+# Time: 15 minutes
+```
+- **Action**: Clear cache when categories modified
+- **File**: `apikeywallet-main/category_routes.py`
+- **Add to each route that modifies categories**:
+  ```python
+  from extensions import cache
+
+  @categories.route('/add_category', methods=['POST'])
+  @login_required
+  def add_category():
+      # ... existing code to add category ...
+
+      # Clear cache
+      cache.delete(f'categories_user_{current_user.id}')
+
+      # ... rest of function
+  ```
+- **Apply to**: add_category, edit_category, delete_category
+- **Validation**: Cache invalidated on changes
+- **Parallel With**: [3.5.6]
+
+**[3.5.8] Add Flask-Compress Dependency**
+```bash
+# Task ID: PERF-008
+# Dependencies: None
+# Time: 2 minutes
+```
+- **Action**: Add response compression
+- **File**: `apikeywallet-main/pyproject.toml`
+- **Add**: `"Flask-Compress>=1.14",`
+- **Validation**: Dependency listed
+- **Parallel With**: All above
+
+**[3.5.9] Install and Enable Flask-Compress**
+```python
+# Task ID: PERF-009
+# Dependencies: [3.5.8]
+# Time: 5 minutes
+```
+- **Action**: Enable gzip compression
+- **Commands**:
+  ```bash
+  pip install Flask-Compress
+  ```
+- **File**: `apikeywallet-main/app.py`
+- **Add**:
+  ```python
+  from flask_compress import Compress
+
+  Compress(app)
+  ```
+- **Validation**: Responses compressed
+- **Parallel With**: None
+
+---
+
+## 🔒 **PHASE 4: ADDITIONAL SECURITY FEATURES**
+
+### WAVE 4.1 - Multi-Factor Authentication (MFA) Foundation
+
+**[4.1.1] Add pyotp and qrcode Dependencies**
+```bash
+# Task ID: MFA-001
+# Dependencies: Phase 3 complete
+# Time: 3 minutes
+```
+- **Action**: Add MFA libraries
+- **File**: `apikeywallet-main/pyproject.toml`
+- **Add**:
+  ```python
+  "pyotp>=2.9.0",
+  "qrcode[pil]>=7.4.2",
+  ```
+- **Validation**: Dependencies listed
+- **Parallel With**: [4.1.2]
+
+**[4.1.2] Install MFA Dependencies**
+```bash
+# Task ID: MFA-002
+# Dependencies: [4.1.1]
+# Time: 3 minutes
+```
+- **Action**: Install packages
+- **Command**: `pip install pyotp "qrcode[pil]"`
+- **Validation**: Packages installed
+- **Parallel With**: None
+
+**[4.1.3] Add MFA Fields to User Model**
+```python
+# Task ID: MFA-003
+# Dependencies: [4.1.2]
+# Time: 5 minutes
+```
+- **Action**: Extend User model
+- **File**: `apikeywallet-main/models.py`
+- **Location**: User class, after is_admin field
+- **Add**:
+  ```python
+  mfa_enabled = db.Column(db.Boolean, default=False, nullable=False)
+  mfa_secret = db.Column(db.String(32), nullable=True)
+  backup_codes = db.Column(db.Text, nullable=True)  # JSON array
+  ```
+- **Validation**: Fields added
+- **Parallel With**: [4.1.4]
+
+**[4.1.4] Create MFA Migration**
+```bash
+# Task ID: MFA-004
+# Dependencies: [4.1.3]
+# Time: 3 minutes
+```
+- **Action**: Generate database migration
+- **Command**: `flask db migrate -m "Add MFA fields to User model"`
+- **Validation**: Migration created
+- **Parallel With**: None
+
+**[4.1.5] Apply MFA Migration**
+```bash
+# Task ID: MFA-005
+# Dependencies: [4.1.4]
+# Time: 2 minutes
+```
+- **Action**: Update database
+- **Command**: `flask db upgrade`
+- **Validation**: Fields exist in database
+- **Parallel With**: None
+
+**[4.1.6] Create MFA Setup Route**
+```python
+# Task ID: MFA-006
+# Dependencies: [4.1.5]
+# Time: 30 minutes
+```
+- **Action**: Add MFA enrollment endpoint
+- **File**: `apikeywallet-main/auth_routes.py`
+- **Content**: Complete setup_mfa() function (from roadmap)
+- **Validation**: Route accessible
+- **Parallel With**: [4.1.7], [4.1.8]
+
+**[4.1.7] Create MFA Verification Route**
+```python
+# Task ID: MFA-007
+# Dependencies: [4.1.5]
+# Time: 25 minutes
+```
+- **Action**: Add MFA verification endpoint
+- **File**: `apikeywallet-main/auth_routes.py`
+- **Content**: Complete verify_mfa() function
+- **Validation**: Route works
+- **Parallel With**: [4.1.6], [4.1.8]
+
+**[4.1.8] Update Login Flow for MFA**
+```python
+# Task ID: MFA-008
+# Dependencies: [4.1.5]
+# Time: 15 minutes
+```
+- **Action**: Check MFA on login
+- **File**: `apikeywallet-main/auth_routes.py`
+- **Location**: login() function
+- **Modify**: Add MFA check before login_user()
+- **Validation**: MFA users redirected to verification
+- **Parallel With**: [4.1.6], [4.1.7]
+
+**[4.1.9] Create MFA Setup Template**
+```html
+# Task ID: MFA-009
+# Dependencies: [4.1.6]
+# Time: 20 minutes
+```
+- **Action**: Create QR code display page
+- **Output**: `apikeywallet-main/templates/setup_mfa.html`
+- **Content**: QR code, secret key, instructions
+- **Validation**: Template renders
+- **Parallel With**: [4.1.10], [4.1.11]
+
+**[4.1.10] Create MFA Verification Template**
+```html
+# Task ID: MFA-010
+# Dependencies: [4.1.7]
+# Time: 15 minutes
+```
+- **Action**: Create code entry page
+- **Output**: `apikeywallet-main/templates/verify_mfa.html`
+- **Content**: 6-digit code input
+- **Validation**: Template renders
+- **Parallel With**: [4.1.9], [4.1.11]
+
+**[4.1.11] Create Backup Codes Template**
+```html
+# Task ID: MFA-011
+# Dependencies: [4.1.6]
+# Time: 15 minutes
+```
+- **Action**: Display backup codes
+- **Output**: `apikeywallet-main/templates/mfa_backup_codes.html`
+- **Content**: List of codes with download option
+- **Validation**: Codes displayed
+- **Parallel With**: [4.1.9], [4.1.10]
+
+**[4.1.12] Add Disable MFA Route**
+```python
+# Task ID: MFA-012
+# Dependencies: [4.1.8]
+# Time: 15 minutes
+```
+- **Action**: Allow MFA removal
+- **File**: `apikeywallet-main/auth_routes.py`
+- **Add**: disable_mfa() function
+- **Requires**: Password confirmation
+- **Validation**: MFA can be disabled
+- **Parallel With**: None
+
+**[4.1.13] Test MFA Flow**
+```python
+# Task ID: MFA-013
+# Dependencies: [4.1.6] through [4.1.12]
+# Time: 20 minutes
+```
+- **Action**: End-to-end MFA testing
+- **Tests**:
+  - Enable MFA
+  - Scan QR code with authenticator app
+  - Login with MFA
+  - Test backup code
+  - Disable MFA
+- **Validation**: All flows work
+- **Parallel With**: None
+
+Due to character limit, I'll commit this portion and continue with the remaining phases.
